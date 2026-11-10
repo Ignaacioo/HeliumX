@@ -1,6 +1,7 @@
 'use strict';
 // Isolated content script; guard repeated injection after installing/updating extension.
-if (!globalThis.__heliumXTitleScript) {
+if (globalThis.__heliumXTitleScriptVersion !== '1.4.2') {
+ globalThis.__heliumXTitleScriptVersion = '1.4.2';
  globalThis.__heliumXTitleScript = true;
  let override = '';
  let original = '';
@@ -75,20 +76,21 @@ if (!globalThis.__heliumXTitleScript) {
   const shadow=shell.attachShadow({mode:'closed'});
   const style=document.createElement('style');
   style.textContent=`
-:host{all:initial;font-family:Inter,system-ui,-apple-system,sans-serif}
+:host{all:initial;font-family:Inter,system-ui,-apple-system,sans-serif;--hx-bg:#eff1f5;--hx-surface:#e6e9ef;--hx-text:#4c4f69;--hx-muted:#6c6f85;--hx-border:#bcc0cc;--hx-accent:#8839ef;--hx-accent-text:#fff;--hx-overlay:rgba(76,79,105,.35);--hx-error:#d20f39}
+@media (prefers-color-scheme: dark){:host{--hx-bg:#24273a;--hx-surface:#363a4f;--hx-text:#cad3f5;--hx-muted:#b8c0e0;--hx-border:#5b6078;--hx-accent:#c6a0f6;--hx-accent-text:#24273a;--hx-overlay:rgba(24,25,38,.6);--hx-error:#ed8796}}
 *{box-sizing:border-box}
-.overlay{position:fixed;inset:0;z-index:2147483647;background:rgba(6,5,12,.55);display:grid;place-items:center;padding:24px}
-.dialog{width:min(100%,380px);background:#1e1e2e;color:#cdd6f4;border:1px solid #45475a;border-radius:14px;padding:20px;box-shadow:0 20px 80px rgba(0,0,0,.55);font:14px system-ui,sans-serif}
+.overlay{position:fixed;inset:0;z-index:2147483647;background:var(--hx-overlay);display:grid;place-items:center;padding:24px}
+.dialog{width:min(100%,380px);background:var(--hx-bg);color:var(--hx-text);border:1px solid var(--hx-border);border-radius:14px;padding:20px;box-shadow:0 20px 80px rgba(0,0,0,.55);font:14px system-ui,sans-serif}
 .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
-h2{font-size:16px;font-weight:650;margin:0;color:#cdd6f4}
-.x{background:transparent;border:0;color:#a6adc8;font-size:21px;cursor:pointer;padding:0 3px}
-label{font-size:12px;color:#bac2de;display:block;margin-bottom:7px}
-input{width:100%;border:1px solid #585b70;background:#313244;color:#cdd6f4;border-radius:8px;padding:11px 12px;font:14px system-ui;outline:none}
-input:focus{border-color:#cba6f7;box-shadow:0 0 0 2px rgba(203,166,247,.2)}
+h2{font-size:16px;font-weight:650;margin:0;color:var(--hx-text)}
+.x{background:transparent;border:0;color:var(--hx-muted);font-size:21px;cursor:pointer;padding:0 3px}
+label{font-size:12px;color:var(--hx-muted);display:block;margin-bottom:7px}
+input{width:100%;border:1px solid var(--hx-border);background:var(--hx-surface);color:var(--hx-text);border-radius:8px;padding:11px 12px;font:14px system-ui;outline:none}
+input:focus{border-color:var(--hx-accent);box-shadow:0 0 0 2px rgba(203,166,247,.2)}
 .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-button{font:13px system-ui;padding:9px 14px;border:1px solid #585b70;background:#313244;color:#cdd6f4;border-radius:8px;cursor:pointer}
-button.primary{background:#cba6f7;color:#1e1e2e;border-color:#cba6f7;font-weight:650}
-.status{font-size:12px;min-height:16px;color:#fab387;margin-top:9px}
+button{font:13px system-ui;padding:9px 14px;border:1px solid var(--hx-border);background:var(--hx-surface);color:var(--hx-text);border-radius:8px;cursor:pointer}
+button.primary{background:var(--hx-accent);color:var(--hx-accent-text);border-color:var(--hx-accent);font-weight:650}
+.status{font-size:12px;min-height:16px;color:var(--hx-error);margin-top:9px}
 `;
   const overlay=document.createElement('div');
   overlay.className='overlay';
@@ -127,7 +129,14 @@ button.primary{background:#cba6f7;color:#1e1e2e;border-color:#cba6f7;font-weight
   // Page content script has no tabId, background resolves the sender's tab.
   form.addEventListener('submit',e=>{e.preventDefault();submit('title:set');});
   reset.addEventListener('click',()=>submit('title:remove'));
-  shell.appendChild(document.createTextNode(''));
+  // Use installed active browser theme when known; otherwise OS light/dark scheme.
+  chrome.runtime.sendMessage({type:'theme:get'}).then(r=>{
+   if(!shell||!r?.ok||!r.theme?.colors)return;
+   const colors=r.theme.colors;
+   const keys={bg:'bg',surface:'surface',text:'text',muted:'muted',border:'border',accent:'accent',accentText:'accent-text',overlay:'overlay',error:'error'};
+   for(const [k,v] of Object.entries(keys))if(colors[k])shell.style.setProperty('--hx-'+v,colors[k]);
+  }).catch(()=>{});
+
   document.documentElement.appendChild(shell);
   // Closed shadow root: use local 'input' reference, not shell.shadowRoot.
   closing=e=>{if(e.key==='Escape'){e.preventDefault();closeDialog();}};

@@ -1,3 +1,4 @@
+import {detectPalette} from './ui-theme-registry.js';
 'use strict';
 // HeliumX Tabs: single shortcut, session-based tab settings, no external requests.
 const DEFAULTS={mode:'groups',pinnedAction:'sleep',lastResult:null};
@@ -76,9 +77,15 @@ async function openRenameDialog(tabId){
  try{
   const tab=await chrome.tabs.get(tabId);
   if(!/^https?:/.test(tab.url||''))throw Error('На служебных страницах переименование недоступно');
+  // Context-menu targets can be background tabs. Make the modal visible.
+  await chrome.tabs.update(tabId,{active:true});
+  await chrome.windows.update(tab.windowId,{focused:true});
   const result=await sendToTab(tabId,{type:'title:dialog'});
   if(!result?.ok)throw Error(result?.error||'Не удалось открыть диалог');
- }catch(error){await notice('Переименование: '+String(error?.message||error));console.warn('HeliumX rename',error);}
+  await chrome.action.setBadgeText({text:''});
+ }catch(error){await notice('Переименование: '+String(error?.message||error));console.warn('HeliumX rename',error);
+  await chrome.action.setBadgeText({text:'!'});
+  await chrome.action.setBadgeBackgroundColor({color:'#f38ba8'});}
 }
 function protectedTab(tab,v,manual){
  return tab.pinned||!!manual[String(tab.id)]||v.mode==='all'||v.mode==='groups'&&Number.isInteger(tab.groupId)&&tab.groupId>=0;
@@ -116,7 +123,17 @@ async function smartClose(forceSleep=false){
  }catch(e){await notice('Вкладка сохранена, выгрузка не удалась: '+String(e?.message||e));}
 }
 chrome.commands.onCommand.addListener(cmd=>{if(cmd==='smart-close')void enqueue(()=>smartClose());});
+chrome.management.onEnabled.addListener(()=>{void chrome.storage.local.set({themeStatusChanged:Date.now()});});
+chrome.management.onDisabled.addListener(()=>{void chrome.storage.local.set({themeStatusChanged:Date.now()});});
 chrome.runtime.onMessage.addListener((msg,sender,respond)=>{
+ if(msg?.type==='theme:get'){
+  void (async()=>{
+   const themes=await chrome.management.getAll();
+   const v=await chrome.storage.local.get({uiThemeMode:'auto'});
+   return detectPalette(themes,v.uiThemeMode);
+  })().then(theme=>respond({ok:true,theme}),e=>respond({ok:false,error:String(e)}));
+  return true;
+ }
  if(msg?.type==='sleep-current'){
   void enqueue(()=>smartClose(true)).then(()=>respond({ok:true}),e=>respond({ok:false,error:String(e)}));return true;
  }

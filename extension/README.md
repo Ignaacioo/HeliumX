@@ -1,15 +1,19 @@
-# Helium Unified Tabs v1.4.1
+# Helium Unified Tabs v1.4.2
 
-Smart Ctrl+W, protected tabs and inline tab renaming. The normal tabs extension and the Catppuccin browser theme are independent installable modules.
+Smart Ctrl+W, protected tabs, inline tab renaming. The normal tabs extension and browser themes are separate installable modules.
 
-## Rename a tab
+## Rename
 
-Right-click a regular web tab and choose **Переименовать вкладку**. A compact modal opens **inside that webpage**, not in a separate browser window. Type a name and Save; Reset removes the custom title. The rename script is injected on demand, so existing pages need no manual reload after updating the extension. The script checks that the webpage accepted the title and reports failures instead of false success.
+Right-click a normal HTTP(S) web tab → **Переименовать вкладку**. A compact modal is injected into that webpage. A host permission for HTTP(S) lets the context menu work on **inactive** tabs (the previous build lacked it). Invalid/restricted pages show an error in the extension status and a ! badge. No window opens. Names last for this browser session.
 
-Limitations: `helium://` and other privileged pages cannot be renamed. Changes use `document.title`; on some sites and Helium versions, the sidebar may show a separate internal title and not mirror it. The rename applies to the current tab and lasts for the current browser session, including reloads; it does not persist across complete browser restart.
+**UI colors:** when an enabled Chromium theme is named Catppuccin Mocha, the modal uses its matching palette from `ui-theme-registry.js`. Extend this registry for future HeliumX themes. For unknown browser themes, Chromium does not expose their exact palette to regular extensions; the modal falls back to OS light/dark via `prefers-color-scheme`. `management` is used only to identify the installed active browser theme. No remote access, telemetry or downloads feature.
+
+**Limits:** Sidebar tab name may be controlled by Helium itself rather than webpage `document.title`. Internal pages (`helium://`, Chrome Web Store, etc.) cannot be injected. A page refresh after updating the extension can clear stale injected scripts.
 
 ## Ctrl+W
 
-Assign a single shortcut in `helium://extensions/shortcuts`. Normal tabs close; pinned/manual/native Chromium-group tabs are protected by default. Helium's proprietary sidebar folders may not expose Chromium `groupId`. `chrome.tabs.discard` may decline to unload pages.
+Bind the extension's single Smart close command in `helium://extensions/shortcuts`. Normal tabs close, pinned/manual/native Chromium-group tabs are protected. Helium sidebar folder metadata may not be exposed as Chromium groups. `chrome.tabs.discard` can refuse to unload a tab.
 
-Permissions: `tabs`, `storage`, `contextMenus`, `scripting`, `activeTab`; script matches normal HTTP(S) pages only. No network calls, downloads panel, or telemetry.
+## Permissions
+
+`tabs`, `storage`, `contextMenus`, `scripting`, `activeTab`, `management` and HTTP(S) host permissions. The last two are for theme detection and injecting the rename modal into inactive tabs.

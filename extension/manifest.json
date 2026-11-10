@@ -1,17 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Helium Unified Tabs",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Smart Ctrl+W, protected tabs, and custom per-tab titles.",
   "permissions": [
     "tabs",
     "storage",
     "contextMenus",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "management"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_title": "Helium Unified Tabs",
@@ -37,5 +39,9 @@
       ],
       "run_at": "document_start"
     }
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
   ]
 }

@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Helium Unified Tabs",
+  "version": "1.4.0",
+  "description": "Smart Ctrl+W, protected tabs, and custom per-tab titles.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "contextMenus"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Helium Unified Tabs",
+    "default_popup": "popup.html"
+  },
+  "commands": {
+    "smart-close": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Smart close: sleep protected tabs, close other tabs"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "title-content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

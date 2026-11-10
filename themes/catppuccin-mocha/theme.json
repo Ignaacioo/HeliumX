@@ -1,0 +1,98 @@
+{
+  "id": "catppuccin-mocha",
+  "name": "Catppuccin Mocha Clean",
+  "version": "5.1.0",
+  "description": "Catppuccin Mocha Clean for Chromium / Helium",
+  "colors": {
+    "frame": [
+      30,
+      30,
+      46
+    ],
+    "frame_inactive": [
+      30,
+      30,
+      46
+    ],
+    "frame_incognito": [
+      30,
+      30,
+      46
+    ],
+    "frame_incognito_inactive": [
+      30,
+      30,
+      46
+    ],
+    "toolbar": [
+      30,
+      30,
+      46
+    ],
+    "tab_text": [
+      205,
+      214,
+      244
+    ],
+    "tab_background_text": [
+      166,
+      173,
+      200
+    ],
+    "tab_background_text_inactive": [
+      108,
+      112,
+      134
+    ],
+    "tab_background_text_incognito": [
+      166,
+      173,
+      200
+    ],
+    "tab_background_text_incognito_inactive": [
+      108,
+      112,
+      134
+    ],
+    "bookmark_text": [
+      205,
+      214,
+      244
+    ],
+    "toolbar_button_icon": [
+      186,
+      194,
+      222
+    ],
+    "omnibox_text": [
+      205,
+      214,
+      244
+    ],
+    "omnibox_background": [
+      24,
+      24,
+      37
+    ],
+    "ntp_background": [
+      30,
+      30,
+      46
+    ],
+    "ntp_link": [
+      203,
+      166,
+      247
+    ],
+    "ntp_text": [
+      205,
+      214,
+      244
+    ],
+    "button_background": [
+      30,
+      30,
+      46
+    ]
+  }
+}

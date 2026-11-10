@@ -1,9 +1,15 @@
-# Helium Unified Tabs
+# Helium Unified Tabs v1.4.1
 
-Single hotkey for tabs. Protected = pinned, manually protected, or native Chromium group tabs (if mode=groups). Normal tabs close on Ctrl+W. Protected tabs switch focus and request `chrome.tabs.discard` without changing URL, except if pinned Reset is selected.
+Smart Ctrl+W, protected tabs and inline tab renaming. The normal tabs extension and the Catppuccin browser theme are independent installable modules.
 
-Install by loading unpacked `extension/` in `helium://extensions`. Bind Ctrl+W in `helium://extensions/shortcuts`. Do **not** leave the old extension enabled.
+## Rename a tab
 
-Context menu: toggle manual protection, set pinned home URL, rename tab. Custom name persists across page reload within a browser session; not across full browser restart. Cannot edit internal `helium://` pages. The underlying Chromium API may not expose Helium sidebar folders as native tab groups.
+Right-click a regular web tab and choose **Переименовать вкладку**. A compact modal opens **inside that webpage**, not in a separate browser window. Type a name and Save; Reset removes the custom title. The rename script is injected on demand, so existing pages need no manual reload after updating the extension. The script checks that the webpage accepted the title and reports failures instead of false success.
 
-The theme is a **separate module** in `../themes/catppuccin-mocha` due to Chromium manifest restrictions.
+Limitations: `helium://` and other privileged pages cannot be renamed. Changes use `document.title`; on some sites and Helium versions, the sidebar may show a separate internal title and not mirror it. The rename applies to the current tab and lasts for the current browser session, including reloads; it does not persist across complete browser restart.
+
+## Ctrl+W
+
+Assign a single shortcut in `helium://extensions/shortcuts`. Normal tabs close; pinned/manual/native Chromium-group tabs are protected by default. Helium's proprietary sidebar folders may not expose Chromium `groupId`. `chrome.tabs.discard` may decline to unload pages.
+
+Permissions: `tabs`, `storage`, `contextMenus`, `scripting`, `activeTab`; script matches normal HTTP(S) pages only. No network calls, downloads panel, or telemetry.

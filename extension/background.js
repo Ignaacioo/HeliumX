@@ -50,7 +50,7 @@ void enqueue(initialize);
 chrome.contextMenus.onClicked.addListener((info,tab)=>{
  if(!Number.isInteger(tab?.id))return;
  if(info.menuItemId===MENU_RENAME){
-  void chrome.windows.create({url:chrome.runtime.getURL('rename.html')+'?tabId='+tab.id,type:'popup',width:430,height:290});return;
+  void openRenameDialog(tab.id);return;
  }
  void enqueue(async()=>{
   if(info.menuItemId===MENU_PROTECT){
@@ -63,6 +63,23 @@ chrome.contextMenus.onClicked.addListener((info,tab)=>{
   }
  });
 });
+async function ensureContentScript(tabId){
+ // Static scripts do not inject into tabs already open when extensions update.
+ // A repeated injection is safe: title-content.js guards against duplicate listeners.
+ await chrome.scripting.executeScript({target:{tabId},files:['title-content.js']});
+}
+async function sendToTab(tabId,message){
+ await ensureContentScript(tabId);
+ return await chrome.tabs.sendMessage(tabId,message);
+}
+async function openRenameDialog(tabId){
+ try{
+  const tab=await chrome.tabs.get(tabId);
+  if(!/^https?:/.test(tab.url||''))throw Error('На служебных страницах переименование недоступно');
+  const result=await sendToTab(tabId,{type:'title:dialog'});
+  if(!result?.ok)throw Error(result?.error||'Не удалось открыть диалог');
+ }catch(error){await notice('Переименование: '+String(error?.message||error));console.warn('HeliumX rename',error);}
+}
 function protectedTab(tab,v,manual){
  return tab.pinned||!!manual[String(tab.id)]||v.mode==='all'||v.mode==='groups'&&Number.isInteger(tab.groupId)&&tab.groupId>=0;
 }
@@ -105,15 +122,22 @@ chrome.runtime.onMessage.addListener((msg,sender,respond)=>{
  }
  if(!['title:get','title:set','title:remove'].includes(msg?.type))return;
  void (async()=>{
-  const id=msg.type==='title:get'?(sender.tab?.id??msg.tabId):msg.tabId;
+  const id=sender.tab?.id??msg.tabId;
   if(!Number.isInteger(id))throw Error('Не найдена вкладка');
   if(msg.type==='title:get'){const titles=await records(TITLES);return{name:titles[String(id)]||''};}
   const tab=await chrome.tabs.get(id);
   if(!/^https?:/.test(tab.url||''))throw Error('Переименование доступно только на веб-страницах');
   const name=msg.type==='title:remove'?'':String(msg.name||'').trim();
   if(name.length>120)throw Error('Максимум 120 символов');
-  await enqueue(()=>modify(TITLES,o=>{if(name)o[String(id)]=name;else delete o[String(id)];}));
-  try{await chrome.tabs.sendMessage(id,{type:'title:apply',name});}catch(e){}
+  const previous=(await records(TITLES))[String(id)]||'';
+  // Apply and verify first. Never say "renamed" if content script is absent.
+  const applied=await sendToTab(id,{type:'title:apply',name});
+  if(!applied?.ok||applied.title!==name){
+   throw Error(applied?.error||'Не удалось изменить заголовок страницы');
+  }
+  try{await enqueue(()=>modify(TITLES,o=>{if(name)o[String(id)]=name;else delete o[String(id)];}));}
+  catch(error){try{await sendToTab(id,{type:'title:apply',name:previous});}catch{}throw error;}
+
   return{name};
  })().then(v=>respond({ok:true,...v}),e=>respond({ok:false,error:String(e?.message||e)}));
  return true;
